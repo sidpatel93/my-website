@@ -1,28 +1,16 @@
 import secrets, os
 from PIL import Image
-from flask import render_template, url_for, flash, redirect, request
+from flask import render_template, url_for, flash, redirect, request, abort
 from flask_blog import app, db, bcrypt
 from flask_blog.forms import RegistrationForm, LoginForm, UpdateAccountForm, PostForm
 from flask_blog.models import User, Post
 from flask_login import login_user, current_user, logout_user, login_required
 
-posts = [{
-    'author': 'Siddharth Patel',
-    'title': 'Blog1',
-    'content': 'Content for blog1',
-    'date_posted': 'July 27th 2021'
-},
-    {
-    'author': 'Vishva Patel',
-    'title': 'Blog2',
-    'content': 'Content for blog2',
-    'date_posted': 'July 26th 2021'
-    }
-]
-
 
 @app.route('/')
+@app.route('/home')
 def home_page():
+    posts = Post.query.all()
     return render_template('home.html', posts = posts)
 
 @app.route('/about')
@@ -115,6 +103,32 @@ def account_page():
 def newpost_page():
     form = PostForm()
     if form.validate_on_submit():
+        post = Post(title = form.title.data, content = form.content.data, author=current_user)
+        db.session.add(post)
+        db.session.commit()
         flash('Your post has been created', category='success')
         return redirect(url_for('home_page'))
-    return render_template('create_post.html', title= 'Create Post', form = form)
+    return render_template('create_post.html', title= 'Create Post', legend = 'new_post',form = form)
+
+@app.route('/post/<int:post_id>')
+def post(post_id):
+    post = Post.query.get_or_404(post_id)
+    return render_template('post.html', title=post.title, post=post)
+
+@app.route('/post/<int:post_id>/update', methods=['GET', 'POST'])
+@login_required
+def update_postt(post_id):
+    post = Post.query.get_or_404(post_id)
+    if post.author != current_user:
+        abort(403)
+    form = PostForm()
+    if form.validate_on_submit():
+        post.title = form.title.data
+        post.content = form.content.data
+        db.session.commit()
+        flash('Your post has been updated!', category='success')
+        return redirect(url_for('post', post_id = post.id))
+    elif request.method == 'GET':
+        form.title.data = post.title
+        form.content.data = post.content
+    return render_template('create_post.html', title='Update Post', legend = 'Update Post',form=form)
