@@ -1,8 +1,7 @@
-from flask import Flask, render_template, url_for, flash, redirect
-from forms import RegistrationForm, LoginForm
-
-app = Flask(__name__)
-app.config["SECRET_KEY"] = 'a66091b86cdc29fe0c984b07dd582274'
+from flask import render_template, url_for, flash, redirect
+from flask_blog import app
+from flask_blog.forms import RegistrationForm, LoginForm
+from flask_blog.models import User, Post
 
 posts = [{
     'author': 'Siddharth Patel',
@@ -46,6 +45,3 @@ def login_page():
         else:
             flash('Login unsuccessful, Please check username and password', category='danger')
     return render_template('login.html', title='Login Page', form = form)
-
-if __name__ == '__main__':
-    app.run(debug=True)
