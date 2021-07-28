@@ -1,6 +1,8 @@
+import secrets, os
+from PIL import Image
 from flask import render_template, url_for, flash, redirect, request
 from flask_blog import app, db, bcrypt
-from flask_blog.forms import RegistrationForm, LoginForm
+from flask_blog.forms import RegistrationForm, LoginForm, UpdateAccountForm
 from flask_blog.models import User, Post
 from flask_login import login_user, current_user, logout_user, login_required
 
@@ -66,7 +68,44 @@ def logout_page():
     logout_user()
     return redirect(url_for('home_page'))
 
-@app.route('/account')
+
+
+def save_picture(form_picture):
+    '''This function will resize the image and return the new image name to be store in DB '''
+    # generate random name for the image.
+    random_hex = secrets.token_hex(8)
+    # split the file name to get the file extension of image
+    f_name , f_ext = os.path.splitext(form_picture.filename)
+    # create a new image name by combining new random name and file extension
+    picture_fn = random_hex + f_ext
+    # create the path name where the image will be stored
+    picture_path = os.path.join(app.root_path, 'static/profile_pics', picture_fn)
+    # Resize the image to 125 x 125 pixels
+    output_size = (125, 125)
+    i = Image.open(form_picture)
+    i.thumbnail(output_size)
+    # Save the new image
+    i.save(picture_path)
+    # return the new image name so that we can use this to update the user profile image default name
+    return picture_fn
+
+@app.route('/account', methods=['GET', 'POST'])
 @login_required                 # login is required to access this route. we defined the path for the login page in the __init__ file.
 def account_page():
-    return render_template('account.html', title='Account')
+    form = UpdateAccountForm()
+    if form.validate_on_submit():
+        if form.picture.data:
+            picture_file = save_picture(form.picture.data)
+            current_user.image_file = picture_file
+
+        current_user.username = form.username.data
+        current_user.email = form.email.data
+        db.session.commit()
+        flash('Your account has been updated', category='success')
+        return redirect(url_for('account_page'))
+    elif request.method == 'GET':
+        form.username.data = current_user.username
+        form.email.data = current_user.email
+
+    image_file = url_for('static', filename='profile_pics/'+current_user.image_file)
+    return render_template('account.html', title='Account', image_file = image_file, form = form)
