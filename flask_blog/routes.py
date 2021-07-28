@@ -1,7 +1,8 @@
-from flask import render_template, url_for, flash, redirect
+from flask import render_template, url_for, flash, redirect, request
 from flask_blog import app, db, bcrypt
 from flask_blog.forms import RegistrationForm, LoginForm
 from flask_blog.models import User, Post
+from flask_login import login_user, current_user, logout_user, login_required
 
 posts = [{
     'author': 'Siddharth Patel',
@@ -28,6 +29,8 @@ def about_page():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register_page():
+    if current_user.is_authenticated:
+        return redirect(url_for('home_page'))
     form = RegistrationForm()
 
     if form.validate_on_submit():
@@ -45,11 +48,25 @@ def register_page():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login_page():
+    if current_user.is_authenticated:
+        return redirect(url_for('home_page'))
     form = LoginForm()
     if form.validate_on_submit():
-        if form.email.data == 'sid@gmail.com' and form.password.data == '123':
-            flash('You have been logged in!', category='success')
-            return redirect(url_for('home_page'))
+        user = User.query.filter_by(email=form.email.data).first()
+        if user and bcrypt.check_password_hash(user.password, form.password.data):
+            login_user(user, remember=form.remember.data)
+            next_page = request.args.get('next')
+            return redirect(next_page) if next_page else redirect(url_for('home_page')) # return to next_page if it exist or return to home page if it does not.
         else:
-            flash('Login unsuccessful, Please check username and password', category='danger')
+            flash('Login unsuccessful, Please check email and password', category='danger')
     return render_template('login.html', title='Login Page', form = form)
+
+@app.route('/logout')
+def logout_page():
+    logout_user()
+    return redirect(url_for('home_page'))
+
+@app.route('/account')
+@login_required                 # login is required to access this route. we defined the path for the login page in the __init__ file.
+def account_page():
+    return render_template('account.html', title='Account')
