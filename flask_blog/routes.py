@@ -12,7 +12,7 @@ from flask_login import login_user, current_user, logout_user, login_required
 def home_page():
     # Implement the pagination to show 5 pages at a time.
     page = request.args.get('page', 1, type=int)
-    posts = Post.query.paginate(page = page, per_page=5)
+    posts = Post.query.paginate(page = page, per_page=2)
     return render_template('home.html', posts = posts)
 
 @app.route('/about')
