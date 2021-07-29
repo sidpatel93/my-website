@@ -1,9 +1,9 @@
 import os
 import secrets
 from PIL import Image
-from flask import url_for
+from flask import url_for, current_app
 from flask_mail import Message
-from flask_blog import app, mail
+from flask_blog import mail
 
 def save_picture(form_picture):
     '''This function will resize the image and return the new image name to be store in DB '''
@@ -14,7 +14,7 @@ def save_picture(form_picture):
     # create a new image name by combining new random name and file extension
     picture_fn = random_hex + f_ext
     # create the path name where the image will be stored
-    picture_path = os.path.join(app.root_path, 'static/profile_pics', picture_fn)
+    picture_path = os.path.join(current_app.root_path, 'static/profile_pics', picture_fn)
     # Resize the image to 125 x 125 pixels
     output_size = (125, 125)
     i = Image.open(form_picture)
