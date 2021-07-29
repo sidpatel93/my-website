@@ -11,8 +11,10 @@ from flask_login import login_user, current_user, logout_user, login_required
 @app.route('/home')
 def home_page():
     # Implement the pagination to show 5 pages at a time.
+    # default page will be page 1
     page = request.args.get('page', 1, type=int)
-    posts = Post.query.paginate(page = page, per_page=2)
+    # paginate the pages by order the post are created.
+    posts = Post.query.order_by(Post.date_posted.desc()).paginate(page = page, per_page=5)
     return render_template('home.html', posts = posts)
 
 @app.route('/about')
@@ -146,3 +148,17 @@ def delete_post(post_id):
     db.session.commit()
     flash('Your post has been deleted!', category='danger')
     return redirect(url_for('home_page'))
+
+@app.route('/user/<string:username>')
+def user_posts(username):
+    # Implement the pagination to show 5 pages at a time.
+    # default page will be page 1
+    page = request.args.get('page', 1, type=int)
+    #
+    user = User.query.filter_by(username = username).first_or_404()
+
+    # paginate the pages by order the post are created. Line is break in to multiple lines  for ease of interpretation.
+    posts = Post.query.filter_by(author = user)\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page = page, per_page=5)
+    return render_template('user_posts.html', posts = posts, user= user)
