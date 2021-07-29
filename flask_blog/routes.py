@@ -117,7 +117,7 @@ def post(post_id):
 
 @app.route('/post/<int:post_id>/update', methods=['GET', 'POST'])
 @login_required
-def update_postt(post_id):
+def update_post(post_id):
     post = Post.query.get_or_404(post_id)
     if post.author != current_user:
         abort(403)
@@ -132,3 +132,15 @@ def update_postt(post_id):
         form.title.data = post.title
         form.content.data = post.content
     return render_template('create_post.html', title='Update Post', legend = 'Update Post',form=form)
+
+
+@app.route('/post/<int:post_id>/delete', methods=['POST'])
+@login_required
+def delete_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    if post.author != current_user:
+        abort(403)
+    db.session.delete(post)
+    db.session.commit()
+    flash('Your post has been deleted!', category='danger')
+    return redirect(url_for('home_page'))
