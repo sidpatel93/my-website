@@ -157,7 +157,6 @@ def user_posts(username):
     page = request.args.get('page', 1, type=int)
     #
     user = User.query.filter_by(username = username).first_or_404()
-
     # paginate the pages by order the post are created. Line is break in to multiple lines  for ease of interpretation.
     posts = Post.query.filter_by(author = user)\
         .order_by(Post.date_posted.desc())\
@@ -171,6 +170,9 @@ def send_reset_email(user: User):
     msg.body = f'''To reset your password, visit the following link: {url_for('reset_token', token = token, _external = True)}
     If you did not make this request, please ignore this request and no changes will be made.
     '''
+
+    mail.send(msg)
+
 
 @app.route('/reset_password', methods=['GET', 'POST'])
 def reset_request():
